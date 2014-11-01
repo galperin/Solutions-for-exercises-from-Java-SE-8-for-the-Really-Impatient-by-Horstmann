@@ -7,8 +7,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 
-import static org.junit.Assert.assertArrayEquals;
 import static de.galperin.javase8.capitel3.CompareOptions.*;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * User: eugen
