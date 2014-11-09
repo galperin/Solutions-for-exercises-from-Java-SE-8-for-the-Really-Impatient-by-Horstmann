@@ -38,15 +38,15 @@ public class C3E13 extends Application {
     }
 
     private EnhancedColorTransformer blur() {
-        return (x, y, m) -> {
+        return (x, y, colors) -> {
             double r = 0;
             double g = 0;
             double b = 0;
             int counter = 0;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    Color c = m[i][j];
-                    if (c != null) {
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    if (x + i >= 0 && y + j >= 0 && x + i < colors.length && y + j < colors[x + i].length) {
+                        Color c = colors[x + i][y + j];
                         r += c.getRed();
                         g += c.getGreen();
                         b += c.getBlue();
@@ -59,13 +59,13 @@ public class C3E13 extends Application {
     }
 
     private EnhancedColorTransformer edgeDetection() {
-        Color nullColor = Color.color(0.0, 0.0, 0.0, 0.0);
-        return (x, y, m) -> {
-            Color c = m[1][1];
-            Color n = m[0][1] != null ? m[0][1] : nullColor;
-            Color e = m[1][2] != null ? m[1][2] : nullColor;
-            Color s = m[2][1] != null ? m[2][1] : nullColor;
-            Color w = m[1][0] != null ? m[1][0] : nullColor;
+        Color nullColor = Color.color(0.0, 0.0, 0.0);
+        return (x, y, colors) -> {
+            Color c = colors[x][y];
+            Color n = y > 0 ? colors[x][y - 1] : nullColor;
+            Color e = x < colors.length - 1 ? colors[x + 1][y] : nullColor;
+            Color s = y < colors[y].length - 1 ? colors[x][y + 1] : nullColor;
+            Color w = x > 0 ? colors[x - 1][y] : nullColor;
             double r = 4 * c.getRed() - n.getRed() - e.getRed() - s.getRed() - w.getRed();
             double g = 4 * c.getGreen() - n.getGreen() - e.getGreen() - s.getGreen() - w.getGreen();
             double b = 4 * c.getBlue() - n.getBlue() - e.getBlue() - s.getBlue() - w.getBlue();
@@ -104,26 +104,40 @@ class EnhancedLatentImage {
 
     private Image in;
     private List<TransformOperation> pendingOperations;
+    List<Color[][]> stages;
 
     public static EnhancedLatentImage from(Image in) {
         EnhancedLatentImage result = new EnhancedLatentImage();
         result.in = in;
         result.pendingOperations = new ArrayList<>();
+        int width = (int) in.getWidth();
+        int height = (int) in.getHeight();
+        result.stages = new ArrayList<>();
+        Color[][] initStage = new Color[width][height];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                initStage[x][y] = in.getPixelReader().getColor(x, y);
+            }
+        }
+        result.stages.add(initStage);
         return result;
     }
 
-    EnhancedLatentImage transform(UnaryOperator<Color> f) {
+    public EnhancedLatentImage transform(UnaryOperator<Color> f) {
         pendingOperations.add(new TransformOperation(map(f)));
+        stages.add(new Color[(int) in.getWidth()][(int) in.getHeight()]);
         return this;
     }
 
-    EnhancedLatentImage transform(ColorTransformer f) {
+    public EnhancedLatentImage transform(ColorTransformer f) {
         pendingOperations.add(new TransformOperation(map(f)));
+        stages.add(new Color[(int) in.getWidth()][(int) in.getHeight()]);
         return this;
     }
 
-    EnhancedLatentImage transform(EnhancedColorTransformer f) {
+    public EnhancedLatentImage transform(EnhancedColorTransformer f) {
         pendingOperations.add(new TransformOperation(f, true));
+        stages.add(new Color[(int) in.getWidth()][(int) in.getHeight()]);
         return this;
     }
 
@@ -131,55 +145,58 @@ class EnhancedLatentImage {
         int width = (int) in.getWidth();
         int height = (int) in.getHeight();
         WritableImage out = new WritableImage(width, height);
-        for (int x = 0; x < width; x++)
+        for (int i = pendingOperations.size() - 1; i > 0; i--) {
+            TransformOperation o = pendingOperations.get(i);
+            if (o.eager) {
+                compute(pendingOperations.subList(0, i));
+                break;
+            }
+        }
+        for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                Color[][] matrix = new Color[3][3];
-                matrix[1][1] = in.getPixelReader().getColor(x, y);
-                Color c = matrix[1][1];
+                Color c = in.getPixelReader().getColor(x, y);
                 for (int i = 0; i < pendingOperations.size(); i++) {
                     TransformOperation o = pendingOperations.get(i);
-                    if (o.eager) {
-                        c = o.transformer.apply(x, y, compute(x, y, pendingOperations.subList(0, i)));
-                    } else {
-                        c = o.transformer.apply(x, y, matrix);
+                    if(i < pendingOperations.size()) {
+                        Color[][] nextStage = stages.get(i + 1);
+                        if(nextStage[x][y] == null) {
+                            c = o.transformer.apply(x, y, stages.get(i));
+                            nextStage[x][y] = c;
+                        }
                     }
-                    matrix[1][1] = c;
                 }
                 out.getPixelWriter().setColor(x, y, c);
             }
+        }
         return out;
     }
 
     private EnhancedColorTransformer map(UnaryOperator<Color> op) {
-        return (x, y, c) -> op.apply(c[1][1]);
+        return (x, y, colors) -> op.apply(colors[x][y]);
     }
 
     private EnhancedColorTransformer map(ColorTransformer op) {
-        return (x, y, c) -> op.apply(x, y, c[1][1]);
+        return (x, y, colors) -> op.apply(x, y, colors[x][y]);
     }
 
-    private Color[][] compute(int x, int y, List<TransformOperation> operations) {
-        Color[][] result = new Color[3][3];
-        for (int i = x - 1, a = 0; i <= x + 1; i++, a++) {
-            for (int j = y - 1, b = 0; j <= y + 1; j++, b++) {
-                if (i >= 0 && j >= 0 && i < in.getWidth() && j < in.getHeight()) {
-                    Color[][] matrix = new Color[3][3];
-                    Color color = in.getPixelReader().getColor(i, j);
-                    matrix[1][1] = color;
-                    result[a][b] = color; //result contains current colors if operations is empty
-                    for (TransformOperation o : operations) {
-                        result[a][b] = o.transformer.apply(i, j, matrix);
-                    }
+    private void compute(List<TransformOperation> operations) {
+        for (int i = 0; i < operations.size(); i++) {
+            TransformOperation o = operations.get(i);
+            int width = (int) in.getWidth();
+            int height = (int) in.getHeight();
+            Color[][] stage = new Color[width][height];
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    stage[x][y] = o.transformer.apply(x, y, stages.get(i));
                 }
             }
+            stages.set(i + 1, stage);
         }
-        return result;
     }
-
-
 }
+
 
 @FunctionalInterface
 interface EnhancedColorTransformer {
-    Color apply(int x, int y, Color[][] neighborhood);
+    Color apply(int x, int y, Color[][] colors);
 }
