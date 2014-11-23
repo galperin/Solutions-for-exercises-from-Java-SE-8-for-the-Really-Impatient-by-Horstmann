@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
@@ -26,12 +27,12 @@ public class C5E3 implements Exercise {
     }
 
     public TemporalAdjuster next(Predicate<LocalDate> predicate) {
-        return temporal -> {
-            LocalDate date = (LocalDate) temporal;
+        return TemporalAdjusters.ofDateAdjuster(temporal -> {
+            LocalDate date = temporal;
             do {
                 date = date.plusDays(1);
             } while (!predicate.test(date));
             return date;
-        };
+        });
     }
 }
