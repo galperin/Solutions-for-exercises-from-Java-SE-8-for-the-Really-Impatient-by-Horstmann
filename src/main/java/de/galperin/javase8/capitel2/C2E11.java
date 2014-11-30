@@ -33,10 +33,7 @@ public class C2E11 implements Exercise {
         String[] array = stream.flatMap(Collection::stream).toArray(String[]::new);
         IntStream range = IntStream.range(0, array.length);
         List<String> result = new ArrayList<>(Arrays.asList(new String[array.length]));
-        range.parallel().forEach(e -> {
-            System.out.printf("Setting element at index %d\n", e);
-            result.set(e, array[e]);
-        });
+        range.parallel().forEach(e -> result.set(e, array[e]));
         return result;
     }
 }
