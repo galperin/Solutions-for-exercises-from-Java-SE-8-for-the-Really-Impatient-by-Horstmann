@@ -15,10 +15,8 @@ public class C2E2 implements Exercise {
     @Override
     public void perform() {
         List<String> words = getWordsAsList();
-        words.stream().filter(s -> {
-            System.out.printf("Calling filter for %s\n", s);
-            return s.length() > 12;
-        }).limit(5).forEach(System.out::println);
+        words.stream().filter(s -> s.length() > 12)
+                .limit(5).forEach(System.out::println);
     }
 }
 
