@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotNull;
  * User: eugen
  * Date: 02.12.14
  */
-public class C6E5 implements Exercise {
+public class C6E6 implements Exercise {
 
     @Test
     @Override
@@ -33,7 +33,7 @@ public class C6E5 implements Exercise {
             try {
                 Arrays.asList(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)
                         .split("[\\P{L}]+")).stream().forEach(w ->
-                        map.merge(w, new HashSet<>(), (existingValue, newValue) -> existingValue).add(f));
+                        map.computeIfAbsent(w, k -> new HashSet<>()).add(f));
             } catch (IOException e) {
                 e.printStackTrace();
             }
