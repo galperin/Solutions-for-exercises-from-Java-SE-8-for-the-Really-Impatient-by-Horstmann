@@ -1,3 +1,4 @@
+#!/usr/bin/jjs -scripting
 var age = $ENV.AGE;
 if($ARG.length > 0){
     age = $ARG[0];

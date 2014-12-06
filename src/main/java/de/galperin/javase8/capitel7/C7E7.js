@@ -1,3 +1,4 @@
+#!/usr/bin/jjs -scripting
 function pipe(){
     var command = [
         '/bin/bash',
@@ -5,7 +6,7 @@ function pipe(){
         Array.prototype.slice.call(arguments).join('|')
     ];
     var builder = new java.lang.ProcessBuilder(command);
-    builder.directory(new java.io.File('./src/main/java/de/galperin/javase8/capitel7'));
+    builder.directory(new java.io.File(__DIR__));
     builder.redirectErrorStream(true);
     var process = builder.start();
     var is = process.getInputStream();

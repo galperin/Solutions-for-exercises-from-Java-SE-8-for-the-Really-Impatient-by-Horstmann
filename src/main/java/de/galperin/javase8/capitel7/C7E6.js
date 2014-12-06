@@ -1,3 +1,4 @@
+#!/usr/bin/jjs -scripting
 function pipe(){
     var result;
     for (var i = 0; i < arguments.length;  i++) {
