@@ -12,6 +12,6 @@ public class C8E2 implements Exercise {
     @Test(expected = Exception.class)
     @Override
     public void perform() {
-        Math.negateExact(Integer.MIN_VALUE);
+        java.lang.Math.negateExact(Integer.MIN_VALUE);
     }
 }
