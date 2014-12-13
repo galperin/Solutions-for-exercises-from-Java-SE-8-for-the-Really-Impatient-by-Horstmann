@@ -1,8 +1,5 @@
 package de.galperin.javase8.capitel8;
 
-import de.galperin.javase8.Exercise;
-import org.junit.Test;
-
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -15,25 +12,23 @@ import java.util.zip.ZipFile;
  * User: eugen
  * Date: 09.12.14
  */
-public class C8E10 implements Exercise {
+public class C8E10 {
 
-    @Test
-    @Override
-    public void perform() {
+    public static void main(String[] args) {
         try {
             String srcPath = System.getenv().get("JAVA_HOME") + "/src.zip";
             String tempPath = System.getProperty("java.io.tmpdir") + "/c8e10";
             extract(srcPath, tempPath);
             try (Stream<Path> entries = Files.walk(Paths.get(tempPath))) {
-                 entries.filter(p -> !Files.isDirectory(p)).forEach(p -> {
-                     try {
-                         if (Files.lines(p).anyMatch(s -> s.contains("transient") || s.contains("volatile"))) {
-                             System.out.printf("%s%n", p);
-                         }
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-                 });
+                entries.filter(p -> !Files.isDirectory(p)).forEach(p -> {
+                    try {
+                        if (Files.lines(p).anyMatch(s -> s.contains("transient") || s.contains("volatile"))) {
+                            System.out.printf("%s%n", p);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
             clean(tempPath);
         } catch (IOException e) {
@@ -42,7 +37,7 @@ public class C8E10 implements Exercise {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void extract(String zipFile, String extractFolder) {
+    private static void extract(String zipFile, String extractFolder) {
         try {
             int BUFFER = 2048;
             File file = new File(zipFile);
@@ -74,7 +69,7 @@ public class C8E10 implements Exercise {
         }
     }
 
-    private void clean(String path) throws IOException {
+    private static void clean(String path) throws IOException {
         Path directory = Paths.get(path);
         Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
 
