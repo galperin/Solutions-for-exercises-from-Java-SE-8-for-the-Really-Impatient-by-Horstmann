@@ -26,7 +26,9 @@ public class C8E13 extends AbstractProcessor {
         Map<String, List<TestCase>> map = new HashMap<>();
         for (TypeElement annotation : annotations) {
             for (Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
-                TestCase[] testCases = element.getAnnotation(TestCases.class).value();
+                TestCase[] testCases = element.getAnnotation(TestCases.class) != null
+                        ? element.getAnnotation(TestCases.class).value()
+                        : null;
                 if (testCases == null) {
                     testCases = new TestCase[]{element.getAnnotation(TestCase.class)};
                 }
