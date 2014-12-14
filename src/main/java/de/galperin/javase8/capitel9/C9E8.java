@@ -1,5 +1,6 @@
-package de.galperin.javase8;
+package de.galperin.javase8.capitel9;
 
+import de.galperin.javase8.Exercise;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
